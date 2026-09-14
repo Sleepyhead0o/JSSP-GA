@@ -215,7 +215,7 @@ def hent_elite(
     return elite
 
 
-# Replacement / New Generation
+# Ny generasjon / erstatning 
 def lag_neste_generasjon(
     populasjon,
     jobber,
@@ -271,7 +271,7 @@ def lag_neste_generasjon(
     return ny_populasjon
 
 
-# Genetic Algorithm
+# Genetisk algoritme 
 def genetisk_algoritme(
     jobber,
     antall_maskiner,
@@ -527,8 +527,6 @@ def tegn_konvergens(historikk):
 
 if __name__ == "__main__":
 
-    resultater = []
-
     # Problem kategorier
     kategorier = {
         "Small": [
@@ -545,44 +543,113 @@ if __name__ == "__main__":
         ]
     }
 
+    parameter_sett = {
+        "P1": {
+            "populasjonsstorrelse": 50,
+            "antall_generasjoner": 200,
+            "kryssingssannsynlighet": 0.7,
+            "mutasjonssannsynlighet": 0.05
+        },
+        "P2": {
+            "populasjonsstorrelse": 100,
+            "antall_generasjoner": 500,
+            "kryssingssannsynlighet": 0.8,
+            "mutasjonssannsynlighet": 0.1
+        },
+        "P3": {
+            "populasjonsstorrelse": 150,
+            "antall_generasjoner": 750,
+            "kryssingssannsynlighet": 0.9,
+            "mutasjonssannsynlighet": 0.2
+        }
+    }
+
+    resultater = []
+
     for kategori, filer in kategorier.items():
+
         for filsti in filer:
+
             jobber, antall_maskiner = les_benchmark_fil(filsti)
             antall_jobber = len(jobber)
 
-            resultat = genetisk_algoritme(
-                jobber,
-                antall_maskiner,
-                vis_fremdrift=False
+            instans = (
+                filsti
+                .split("/")[-1]
+                .replace(".txt", "")
             )
 
-            beste_makespan = resultat["beste_makespan"]
+            for parameter_navn, parametere in parameter_sett.items():
 
-            instans = filsti.split("/")[-1].replace(".txt", "")
+                print()
+                print(
+                    f"Kjører {kategori} - {instans} - "
+                    f"{parameter_navn}"
+                )
 
-            resultater.append([
-                kategori,
-                instans,
-                antall_jobber,
-                antall_maskiner,
-                beste_makespan
-            ])
+                statistikk, beste_resultat = kjor_eksperiment(
+                    jobber,
+                    antall_maskiner,
+                    antall_kjoringer=10,
+                    **parametere
+                )
+
+                if instans == "la01" and parameter_navn == "P3":
+                    gantt_resultat = beste_resultat
+                    gantt_maskiner = antall_maskiner
+                
+                resultater.append({
+                    "kategori": kategori,
+                    "instans": instans,
+                    "parameter": parameter_navn,
+                    "jobber": antall_jobber,
+                    "maskiner": antall_maskiner,
+                    "beste": statistikk["beste"],
+                    "verste": statistikk["verste"],
+                    "gjennomsnitt": statistikk["gjennomsnitt"],
+                    "standardavvik": statistikk["standardavvik"],
+                    "kjoretid": statistikk["gjennomsnittlig_kjoretid"],
+                    "konvergens": statistikk["gjennomsnittlig_konvergens"]
+                })
+
+    print()
+    print("=" * 125)
 
     print(
-        f"{'Kategori':<15}"
-        f"{'Instans':<15}"
-        f"{'Jobber':<15}"
-        f"{'Maskiner':<15}"
-        f"{'Beste makespan':<15}"
+        f"{'Kategori':<10}"
+        f"{'Instans':<10}"
+        f"{'Param':<8}"
+        f"{'Jobber':<8}"
+        f"{'Maskiner':<10}"
+        f"{'Best':<10}"
+        f"{'Worst':<10}"
+        f"{'Gj.snitt':<12}"
+        f"{'Std':<10}"
+        f"{'Tid (s)':<12}"
+        f"{'Konvergens':<12}"
     )
 
-    print("-" * 85)
+    print("-" * 125)
 
-    for kategori, instans, jobber, maskiner, makespan in resultater:
+    for resultat in resultater:
+
         print(
-            f"{kategori:<15}"
-            f"{instans:<15}"
-            f"{jobber:<15}"
-            f"{maskiner:<15}"
-            f"{makespan:<15}"
+            f"{resultat['kategori']:<10}"
+            f"{resultat['instans']:<10}"
+            f"{resultat['parameter']:<8}"
+            f"{resultat['jobber']:<8}"
+            f"{resultat['maskiner']:<10}"
+            f"{resultat['beste']:<10}"
+            f"{resultat['verste']:<10}"
+            f"{resultat['gjennomsnitt']:<12.2f}"
+            f"{resultat['standardavvik']:<10.2f}"
+            f"{resultat['kjoretid']:<12.3f}"
+            f"{resultat['konvergens']:<12.2f}"
         )
+
+    if gantt_resultat is not None:
+        tegn_gantt(
+        gantt_resultat["beste_tidsplan"],
+        gantt_maskiner,
+        tittel="Gantt-diagram - la01 - P3"
+    )
