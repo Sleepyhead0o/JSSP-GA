@@ -445,13 +445,15 @@ def skriv_ut_tidsplan(tidsplan):
         )
 
 
-# Gantt Chart
+# Gantt Diagram/chart
 def tegn_gantt(
     tidsplan,
     antall_maskiner,
     tittel="JSSP Gantt-diagram"
 ):
     figur, akse = plt.subplots()
+
+    farger = plt.cm.tab10.colors
 
     for operasjon in tidsplan:
         maskin = operasjon["maskin"]
@@ -467,7 +469,8 @@ def tegn_gantt(
         akse.barh(
             y=maskin,
             width=varighet,
-            left=start
+            left=start,
+            color=farger[jobb % len(farger)]
         )
 
         akse.text(
@@ -497,28 +500,6 @@ def tegn_gantt(
         axis="x",
         alpha=0.3
     )
-
-    plt.tight_layout()
-    plt.show()
-
-
-# Convergence Curve
-def tegn_konvergens(historikk):
-    plt.figure()
-
-    plt.plot(
-        range(1, len(historikk) + 1),
-        historikk
-    )
-
-    plt.xlabel("Generasjon")
-    plt.ylabel("Beste makespan")
-
-    plt.title(
-        "Konvergens for genetisk algoritme"
-    )
-
-    plt.grid(alpha=0.3)
 
     plt.tight_layout()
     plt.show()
